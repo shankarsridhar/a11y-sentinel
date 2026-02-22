@@ -6,7 +6,7 @@ Standard axe-core-in-JSDOM testing catches roughly 30-40% of WCAG violations. It
 
 ---
 
-**Table of contents**: [Who is this for](#who-is-this-for) | [Getting started](#getting-started) | [How-to guides](#how-to-guides) | [Reference](#reference) | [How it works](#how-it-works) | [Development](#development) | [License](#license)
+**Table of contents**: [Who is this for](#who-is-this-for) | [Why a11y-sentinel](#why-a11y-sentinel) | [Getting started](#getting-started) | [How-to guides](#how-to-guides) | [Reference](#reference) | [How it works](#how-it-works) | [Development](#development) | [License](#license)
 
 ---
 
@@ -20,6 +20,41 @@ Standard axe-core-in-JSDOM testing catches roughly 30-40% of WCAG violations. It
 
 - Node.js 18+
 - npm
+
+---
+
+## Why a11y-sentinel
+
+### Most axe-core setups miss real-browser issues
+
+The typical approach — axe-core in JSDOM via jest-axe — runs against a simulated DOM that doesn't render CSS, compute layout, or execute media queries. Axe-core rules that depend on computed styles, bounding boxes, or visibility silently skip.
+
+a11y-sentinel runs axe-core against a live Chromium page, so rules like color contrast, visibility-dependent checks, and focus-related rules actually execute.
+
+| Capability | axe-core in JSDOM | axe-core in this CLI |
+|--|--|--|
+| Computed CSS styles | No | Yes |
+| Layout and bounding boxes | No | Yes |
+| Color contrast checking | Broken (no computed colors) | Works |
+| Media queries / responsive | No | Yes |
+| Focus-related rules | Can't focus in JSDOM | Works |
+| iframes / shadow DOM | Limited | Full |
+
+### Interaction testing catches what axe-core cannot
+
+Axe-core — in any context — analyzes the DOM at a single point in time. It cannot test what happens when a user interacts with the page. These issues only surface through behavioral testing:
+
+- **Keyboard traps** — A user Tabs into a widget and can never Tab out. The DOM is valid; the trap only manifests through sequential keyboard interaction.
+- **Missing focus indicators** — A button has `outline: none` and no replacement style. Axe-core can check that an element *is* focusable, but not that focus is *visible*.
+- **Unreachable elements** — An interactive element has correct ARIA but the Tab order skips it entirely due to DOM order or `tabindex` conflicts.
+- **Modal focus failures** — A dialog opens but focus stays behind it. A screen reader user has no idea the dialog appeared.
+- **Post-interaction violations** — Submitting an empty form reveals validation UI that itself has accessibility issues (missing `aria-invalid`, no error message association).
+
+These are the issues that typically require manual QA — someone tabbing through pages, opening modals, submitting forms. Layer 2 automates that manual testing.
+
+### Zero test authoring
+
+Even teams that already run `@axe-core/playwright` in their test suite need to write a test file per route, handle browser setup/teardown, manage auth and navigation, and maintain those tests as routes change. a11y-sentinel replaces all of that with a YAML config and one command — you declare routes, not write tests.
 
 ---
 
