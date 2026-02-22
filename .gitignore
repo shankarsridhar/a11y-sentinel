@@ -1,0 +1,7 @@
+node_modules/
+dist/
+a11y-reports/
+*.tsbuildinfo
+.env
+.DS_Store
+.playwright-cli/
