@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import type { SentinelConfig, RouteConfig } from './types.js';
 import * as logger from '../utils/logger.js';
@@ -16,16 +17,30 @@ function registerCleanup() {
 }
 
 export async function launchBrowser(): Promise<Browser> {
+  let browser: Browser;
   try {
-    const browser = await chromium.launch({ headless: true });
-    activeBrowser = browser;
-    registerCleanup();
-    return browser;
+    browser = await chromium.launch({ headless: true });
   } catch {
-    throw new Error(
-      'Chromium not installed. Run: npx playwright install chromium',
-    );
+    logger.info('Chromium not found — installing automatically...');
+    try {
+      execSync('npx playwright install chromium', { stdio: 'pipe' });
+    } catch {
+      throw new Error(
+        'Failed to auto-install Chromium. Run manually: npx playwright install chromium',
+      );
+    }
+    try {
+      browser = await chromium.launch({ headless: true });
+    } catch (err) {
+      const hint = (err as Error).message?.includes('Executable')
+        ? 'Run manually: npx playwright install chromium'
+        : 'Chromium installed but failed to launch. You may be missing system dependencies — see https://playwright.dev/docs/intro#system-requirements';
+      throw new Error(hint);
+    }
   }
+  activeBrowser = browser;
+  registerCleanup();
+  return browser;
 }
 
 export async function createContext(

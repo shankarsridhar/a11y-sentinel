@@ -4,6 +4,8 @@
   "description": "Multi-layer accessibility auditing CLI — axe-core + interaction testing + artifact export for AI analysis",
   "type": "module",
   "main": "dist/cli/index.js",
+  "files": ["dist", "README.md"],
+  "engines": { "node": ">=18" },
   "bin": {
     "a11y-sentinel": "./dist/cli/index.js"
   },
